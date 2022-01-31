@@ -7,4 +7,5 @@ data:
   AMQP_HOST: "{{ .Values.configmap.host }}"
   AMQP_PORT: "{{ .Values.configmap.port }}"
   QUEUE_NAME: "{{ .Values.configmap.queue.name }}"
+  QUEUE_TTL: "{{ .Values.configmap.queue.ttl }}"
   PLEX_URL: "{{ .Values.configmap.plex.url }}"

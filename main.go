@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"github.com/streadway/amqp"
@@ -24,6 +25,10 @@ func requiredEnv(name string) string {
 	}
 
 	return value
+}
+
+type Movie struct {
+	Title string `json:"title"`
 }
 
 func main() {
@@ -53,15 +58,21 @@ func main() {
 	movies, err := plex.Movies()
 	failOnError(err, "failed to retrieve movies")
 
-	for _, video := range movies {
+	for _, movie := range movies {
+		body, err := json.Marshal(movie)
+		if err != nil {
+			fmt.Printf("Unable to marshal movie (%v): %s\n", movie, err)
+			continue
+		}
+
 		err = ch.Publish(
 			"",
 			queue.Name,
 			false,
 			false,
 			amqp.Publishing{
-				ContentType: "text/plain",
-				Body:        []byte(video.Title),
+				ContentType: "application/json",
+				Body:        body,
 			})
 
 		failOnError(err, "failed to publish message")
@@ -96,6 +107,12 @@ type MediaContainer struct {
 type Video struct {
 	XMLName xml.Name `xml:"Video"`
 	Title   string   `xml:"title,attr"`
+}
+
+func (v Video) ToMovie() Movie {
+	return Movie{
+		Title: v.Title,
+	}
 }
 
 type MediaContainerLibrary struct {
@@ -174,11 +191,21 @@ func (p Plex) Library(id string) (*MediaContainerLibrary, error) {
 	return &container, nil
 }
 
-func (p Plex) Movies() ([]Video, error) {
+func videosToMovies(videos []Video) []Movie {
+	var movies []Movie
+
+	for _, video := range videos {
+		movies = append(movies, video.ToMovie())
+	}
+
+	return movies
+}
+
+func (p Plex) Movies() ([]Movie, error) {
 	libraries, err := p.Libraries()
 	failOnError(err, "failed to retrieve libraries")
 
-	var videos []Video
+	var videos []Movie
 
 	for _, directory := range libraries.Directories {
 		if directory.Type != "movie" {
@@ -189,7 +216,8 @@ func (p Plex) Movies() ([]Video, error) {
 		if err != nil {
 			return videos, fmt.Errorf("failed to retrieve library [%s] %s", directory.Location.Id, directory.Title)
 		}
-		videos = append(videos, library.Videos...)
+
+		videos = append(videos, videosToMovies(library.Videos)...)
 	}
 
 	return videos, nil
