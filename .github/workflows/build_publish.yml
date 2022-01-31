@@ -41,6 +41,7 @@ jobs:
         run: sed -i -e "s#__TAG__#${GITHUB_SHA}#g" values.yaml
       - run: sed -i -e "s#__USERNAME__#${{ secrets.AMQP_USERNAME }}#g" values.yaml
       - run: sed -i -e "s#__PASSWORD__#${{ secrets.AMQP_PASSWORD }}#g" values.yaml
+      - run: sed -i -e "s#__PLEX_TOKEN__#${{ secrets.PLEX_TOKEN }}#g" values.yaml
       - name: install helm chart
         uses: WyriHaximus/github-action-helm3@v2
         with:

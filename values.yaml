@@ -22,6 +22,7 @@ secret:
   name: rabbitmq
   username: __USERNAME__
   password: __PASSWORD__
+  token: __PLEX_TOKEN__
 
 configmap:
   name: rabbitmq
