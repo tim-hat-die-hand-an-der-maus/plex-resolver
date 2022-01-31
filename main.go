@@ -50,8 +50,10 @@ func main() {
 
 	queue, err := ch.QueueDeclare(requiredEnv("QUEUE_NAME"), false, false, false, false, nil)
 	failOnError(err, "failed to declare queue")
+	movies, err := plex.Movies()
+	failOnError(err, "failed to retrieve movies")
 
-	for _, video := range plex.Movies() {
+	for _, video := range movies {
 		err = ch.Publish(
 			"",
 			queue.Name,
@@ -127,48 +129,53 @@ func (p Plex) Get(url string, marshalInto interface{}) (*http.Response, error) {
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		//goland:noinspection GoUnusedCallResult
-		fmt.Errorf("couldn't read from response body")
+		err = fmt.Errorf("couldn't read from response body %v", err)
 		return response, err
 	}
 
+	if response.StatusCode != 200 {
+		err = fmt.Errorf("httpcode != 200:\n\t%s\n", body)
+		return nil, err
+	}
+
+	fmt.Printf("unmarshal body:\n\t%s\n", string(body))
 	err = xml.Unmarshal(body, &marshalInto)
 	if err != nil {
-		//goland:noinspection GoUnusedCallResult
-		fmt.Errorf("couldn't unmarshal body")
+		err = fmt.Errorf("couldn't unmarshal body")
 		return nil, err
 	}
 
 	return response, nil
 }
 
-func (p Plex) Libraries() *MediaContainer {
+func (p Plex) Libraries() (*MediaContainer, error) {
 	var container MediaContainer
 	_, err := p.Get("library/sections", &container)
 	if err != nil {
-		//goland:noinspection GoUnusedCallResult
-		fmt.Errorf("failed to get library/sections")
-		return nil
+		err = fmt.Errorf("failed to get library/sections")
+		return nil, err
 	}
 
-	return &container
+	return &container, nil
 }
 
-func (p Plex) Library(id string) *MediaContainerLibrary {
+func (p Plex) Library(id string) (*MediaContainerLibrary, error) {
 	var container MediaContainerLibrary
 	url := fmt.Sprintf("library/sections/%s/all", id)
 
 	_, err := p.Get(url, &container)
 	if err != nil {
-		//goland:noinspection GoUnusedCallResult
-		fmt.Errorf("failed to get %s\n", url)
-		return nil
+		err = fmt.Errorf("failed to get %s\n", url)
+		return nil, err
 	}
 
-	return &container
+	return &container, nil
 }
 
-func (p Plex) Movies() []Video {
-	libraries := p.Libraries()
+func (p Plex) Movies() ([]Video, error) {
+	libraries, err := p.Libraries()
+	failOnError(err, "failed to retrieve libraries")
+
 	var videos []Video
 
 	for _, directory := range libraries.Directories {
@@ -176,9 +183,12 @@ func (p Plex) Movies() []Video {
 			continue
 		}
 
-		library := p.Library(directory.Location.Id)
+		library, err := p.Library(directory.Location.Id)
+		if err != nil {
+			return videos, fmt.Errorf("failed to retrieve library [%s] %s", directory.Location.Id, directory.Title)
+		}
 		videos = append(videos, library.Videos...)
 	}
 
-	return videos
+	return videos, nil
 }
