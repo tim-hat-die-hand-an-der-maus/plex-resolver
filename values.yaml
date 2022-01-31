@@ -30,6 +30,6 @@ configmap:
   port: 5672
   queue:
     name: plex
-    ttl: 3600000 # 3600000 = 1h
+    ttl: 3630000 # 3600000 = 1h
   plex:
     url: https://plex.carstens.tech
