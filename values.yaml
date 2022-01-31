@@ -30,4 +30,4 @@ configmap:
   queue:
     name: plex
   plex:
-    url: rabbitmq
+    url: https://plex.carstens.tech
