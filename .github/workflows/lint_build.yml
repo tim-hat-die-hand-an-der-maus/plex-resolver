@@ -1,4 +1,4 @@
-name: Build image
+name: Lint helm chart
 
 on:
   push:
@@ -17,10 +17,3 @@ jobs:
       - uses: WyriHaximus/github-action-helm3@v2
         with:
           exec: helm lint --strict
-
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - name: Build the tagged Docker image
-        run: docker build -t ghcr.io/tim-hat-die-hand-an-der-maus/plex-resolver:${GITHUB_SHA} .
