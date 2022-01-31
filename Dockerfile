@@ -14,5 +14,6 @@ FROM scratch
 
 COPY --from=builder /go/bin/plex-request /go/bin/plex-request
 COPY --from=builder /lib/ld-musl-x86_64.so.1 /lib/ld-musl-x86_64.so.1
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 ENTRYPOINT ["/go/bin/plex-request"]
