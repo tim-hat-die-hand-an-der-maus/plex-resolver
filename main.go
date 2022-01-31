@@ -63,7 +63,7 @@ func main() {
 				ContentType: "text/plain",
 				Body:        []byte(video.Title),
 			})
-		fmt.Println(video.Title)
+
 		failOnError(err, "failed to publish message")
 	}
 }
