@@ -1,0 +1,7 @@
+apiVersion: v2
+name: plex-movie-sender
+description: sends list of available plex movies to rabbitmq
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+icon: https://carstens.tech/helm_icon.png

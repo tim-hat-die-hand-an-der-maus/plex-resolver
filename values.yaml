@@ -1,0 +1,33 @@
+namespace: timhatdiehandandermaus
+
+cronjob:
+  name: plex-resolver
+  image: ghcr.io/tim-hat-die-hand-an-der-maus/plex-resolver:__TAG__
+  imagePullPolicy: IfNotPresent
+  schedule: "CRON_TZ=UTC * */1 * * *"
+  backoffLimit: 0
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  restartPolicy: Never
+  labels:
+    app: plex-resolver
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limit:
+    cpu: 300m
+    memory: 300Mi
+
+secret:
+  name: rabbitmq
+  username: __USERNAME__
+  password: __PASSWORD__
+
+configmap:
+  name: rabbitmq
+  host: tim.rabbitmq
+  port: 5672
+  queue:
+    name: plex
+  plex:
+    url: rabbitmq
