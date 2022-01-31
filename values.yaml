@@ -4,7 +4,7 @@ cronjob:
   name: plex-resolver
   image: ghcr.io/tim-hat-die-hand-an-der-maus/plex-resolver:__TAG__
   imagePullPolicy: IfNotPresent
-  schedule: "CRON_TZ=UTC * */1 * * *"
+  schedule: "CRON_TZ=UTC 0 * * * *"
   backoffLimit: 0
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
