@@ -117,12 +117,14 @@ func New(baseUrl, token string) Plex {
 }
 
 func (p Plex) Get(url string, marshalInto interface{}) (*http.Response, error) {
+	url = p.baseUrl + "/" + url + "?X-Plex-Token="
+	fmt.Printf("calling %s\n", url)
 	// TODO: use url type for this
-	url = p.baseUrl + "/" + url + "?X-Plex-Token=" + p.token
+	url = url + p.token
 	response, err := p.client.Get(url)
 	if err != nil {
 		//goland:noinspection GoUnusedCallResult
-		fmt.Errorf("failed to retrieve url")
+		fmt.Errorf("failed to retrieve url: %s", err)
 		return response, err
 	}
 
@@ -141,7 +143,7 @@ func (p Plex) Get(url string, marshalInto interface{}) (*http.Response, error) {
 	fmt.Printf("unmarshal body:\n\t%s\n", string(body))
 	err = xml.Unmarshal(body, &marshalInto)
 	if err != nil {
-		err = fmt.Errorf("couldn't unmarshal body")
+		err = fmt.Errorf("couldn't unmarshal body: %s", err)
 		return nil, err
 	}
 
@@ -152,7 +154,7 @@ func (p Plex) Libraries() (*MediaContainer, error) {
 	var container MediaContainer
 	_, err := p.Get("library/sections", &container)
 	if err != nil {
-		err = fmt.Errorf("failed to get library/sections")
+		err = fmt.Errorf("failed to get library/sections: %s", err)
 		return nil, err
 	}
 
