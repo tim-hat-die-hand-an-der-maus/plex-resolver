@@ -1,35 +1,33 @@
 namespace: timhatdiehandandermaus
 
-cronjob:
+deployment:
   name: plex-resolver
   image: ghcr.io/tim-hat-die-hand-an-der-maus/plex-resolver:__TAG__
-  imagePullPolicy: IfNotPresent
-  schedule: "CRON_TZ=UTC 0 * * * *"
-  backoffLimit: 0
-  successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 1
-  restartPolicy: Never
+  imagePullPolicy: Always
+  revisionHistoryLimit: 1
+  replicas: 2
+  ports:
+    - 8080
   labels:
-    app: plex-resolver
+    app: preliminary-frontend
   requests:
-    cpu: 100m
-    memory: 100Mi
+    cpu: 50m
+    memory: 10Mi
   limit:
     cpu: 300m
-    memory: 300Mi
+    memory: 50Mi
+
+service:
+  name: plex-resolver
+  port: 80
+  targetPort: 8080
+  appSelector: plex-resolver
 
 secret:
   name: rabbitmq
-  username: __USERNAME__
-  password: __PASSWORD__
   token: __PLEX_TOKEN__
 
 configmap:
-  name: rabbitmq
-  host: tim.rabbitmq
-  port: 5672
-  queue:
-    name: plex
-    ttl: 3630000 # 3600000 = 1h
+  name: plex-resolver
   plex:
     url: https://plex.carstens.tech
