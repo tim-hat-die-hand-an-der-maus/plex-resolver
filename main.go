@@ -1,10 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/streadway/amqp"
+	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -31,52 +30,32 @@ type Movie struct {
 	Title string `json:"title"`
 }
 
+type QueueRequest struct {
+	Action  string `json:"action"`
+	Request string `json:"request"`
+	Queue   string `json:"queue"`
+}
+
 func main() {
 	token := requiredEnv("PLEX_TOKEN")
 	plexUrl := requiredEnv("PLEX_URL")
-	amqpUser := requiredEnv("AMQP_USER")
-	amqpPassword := requiredEnv("AMQP_PASSWORD")
-	amqpHost := requiredEnv("AMQP_HOST")
-	amqpPort := requiredEnv("AMQP_PORT")
-
-	plex := New(plexUrl, token)
-	amqpUrl := fmt.Sprintf("amqp://%s:%s@%s:%s", amqpUser, amqpPassword, amqpHost, amqpPort)
-	conn, err := amqp.Dial(amqpUrl)
-	//goland:noinspection GoUnhandledErrorResult
-	defer conn.Close()
-	if err != nil {
-		log.Fatalf("rabbitmq dial failed (%s): %s\n", amqpUrl, err)
-	}
-
-	ch, err := conn.Channel()
-	failOnError(err, "failed to create channel")
-	//goland:noinspection GoUnhandledErrorResult
-	defer ch.Close()
-
-	queue, err := ch.QueueDeclare(requiredEnv("QUEUE_NAME"), false, false, false, false, nil)
-	failOnError(err, "failed to declare queue")
-	movies, err := plex.Movies()
-	failOnError(err, "failed to retrieve movies")
-
-	for _, movie := range movies {
-		body, err := json.Marshal(movie)
+	r := gin.Default()
+	r.GET("/movies", func(c *gin.Context) {
+		plex := New(plexUrl, token)
+		movies, err := plex.Movies()
 		if err != nil {
-			fmt.Printf("Unable to marshal movie (%v): %s\n", movie, err)
-			continue
-		}
-
-		err = ch.Publish(
-			"",
-			queue.Name,
-			false,
-			false,
-			amqp.Publishing{
-				ContentType: "application/json",
-				Body:        body,
+			c.JSON(500, gin.H{
+				"movies": make([]int, 0),
+				"error":  fmt.Sprintf("%v", err),
 			})
+		} else {
+			c.JSON(200, gin.H{
+				"movies": movies,
+			})
+		}
+	})
 
-		failOnError(err, "failed to publish message")
-	}
+	log.Fatal(r.Run("0.0.0.0:8080"))
 }
 
 type Plex struct {
@@ -135,7 +114,6 @@ func New(baseUrl, token string) Plex {
 
 func (p Plex) Get(url string, marshalInto interface{}) (*http.Response, error) {
 	url = p.baseUrl + "/" + url + "?X-Plex-Token="
-	fmt.Printf("calling %s\n", url)
 	// TODO: use url type for this
 	url = url + p.token
 	response, err := p.client.Get(url)
@@ -157,7 +135,6 @@ func (p Plex) Get(url string, marshalInto interface{}) (*http.Response, error) {
 		return nil, err
 	}
 
-	fmt.Printf("unmarshal body:\n\t%s\n", string(body))
 	err = xml.Unmarshal(body, &marshalInto)
 	if err != nil {
 		err = fmt.Errorf("couldn't unmarshal body: %s", err)
