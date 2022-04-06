@@ -9,7 +9,7 @@ deployment:
   ports:
     - 8080
   labels:
-    app: preliminary-frontend
+    app: plex-resolver
   requests:
     cpu: 50m
     memory: 10Mi
