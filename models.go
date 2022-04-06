@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/xml"
-	"net/http"
 )
 
 type Movie struct {
@@ -27,12 +26,6 @@ type QueueRequest struct {
 	Queue   string `json:"queue"`
 }
 
-type Plex struct {
-	baseUrl string
-	token   string
-	client  http.Client
-}
-
 type Location struct {
 	XMLName xml.Name `xml:"Location"`
 	Id      string   `xml:"id,attr"`
@@ -55,6 +48,12 @@ type MediaContainer struct {
 type Video struct {
 	XMLName xml.Name `xml:"Video"`
 	Title   string   `xml:"title,attr"`
+}
+
+func (v Video) ToMovie() Movie {
+	return Movie{
+		Title: v.Title,
+	}
 }
 
 type MediaContainerLibrary struct {
