@@ -3,4 +3,5 @@ kind: ConfigMap
 metadata:
   name: {{ .Values.configmap.name }}
   namespace: {{ .Values.namespace }}
-data: {}
+data:
+  CONFIG_FILENAME: {{ .Values.configmap.configFilename }}

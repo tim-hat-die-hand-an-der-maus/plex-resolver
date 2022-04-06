@@ -49,7 +49,12 @@ func isAllError(serverResponse []MovieResponse) bool {
 }
 
 func main() {
-	config, err := ReadConfig("config.toml")
+	configFilename := os.Getenv("CONFIG_FILENAME")
+	if configFilename == "" {
+		configFilename = "config.toml"
+	}
+
+	config, err := ReadConfig(configFilename)
 	if err != nil {
 		fmt.Printf("failed to read config:\n%v\n", err)
 		return

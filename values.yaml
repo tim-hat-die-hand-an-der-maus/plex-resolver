@@ -35,3 +35,4 @@ secret:
 
 configmap:
   name: plex-resolver
+  configFilename: /etc/plex-resolver/config.toml

@@ -41,7 +41,7 @@ spec:
             memory: {{ .Values.deployment.limit.memory }}
         volumeMounts:
           - name: {{ .Values.deployment.volumes.secret.server }}
-            mountPath: "/etc/plex-resolver/config.toml"
+            mountPath: {{ .Values.configmap.configFilename }}
             subPath: config.toml
             readOnly: true
       volumes:
