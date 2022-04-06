@@ -10,8 +10,9 @@ type Movie struct {
 }
 
 type ResponseServer struct {
-	Name string `json:"name"`
-	Url  string `json:"url"`
+	Name  string `json:"name"`
+	Url   string `json:"url"`
+	Error *error `json:"error"`
 }
 
 type MovieResponse struct {

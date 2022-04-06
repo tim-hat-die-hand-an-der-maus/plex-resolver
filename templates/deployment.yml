@@ -39,3 +39,13 @@ spec:
           limits:
             cpu: {{ .Values.deployment.limit.cpu }}
             memory: {{ .Values.deployment.limit.memory }}
+        volumeMounts:
+          - name: {{ .Values.deployment.volumes.secret.server }}
+            mountPath: "/etc/plex-resolver/config.toml"
+            subPath: config.toml
+            readOnly: true
+      volumes:
+        - name: {{ .Values.deployment.volumes.secret.server }}
+          secret:
+            secretName: {{ .Values.secret.name }}
+            optional: false

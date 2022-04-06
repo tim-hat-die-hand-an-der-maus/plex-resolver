@@ -34,14 +34,14 @@ func plexServerResponse(server ConfigPlexServer) MovieResponse {
 	}
 }
 
-func isAllError(movies []MovieResponse) bool {
-	if len(movies) == 0 {
+func isAllError(serverResponse []MovieResponse) bool {
+	if len(serverResponse) == 0 {
 		return true
 	}
 
-	for _, movie := range movies {
-		if movie.Error != nil {
-			return false
+	for _, movie := range serverResponse {
+		if *movie.Error != nil {
+			return true
 		}
 	}
 
@@ -57,7 +57,7 @@ func main() {
 
 	r := gin.Default()
 	r.GET("/movies", func(c *gin.Context) {
-		response := make([]MovieResponse, len(config.Servers))
+		response := make([]MovieResponse, len(config.Servers)-1)
 
 		for _, server := range config.Servers {
 			response = append(response, plexServerResponse(server))
@@ -72,12 +72,11 @@ func main() {
 				"type":    "https://github.com/tim-hat-die-hand-an-der-maus/plex-resolver",
 				"title":   "Failed to retrieve movies",
 				"detail":  fmt.Sprintf("Failed to retrieve movies from all %d plex servers", len(config.Servers)),
-				"servers": ConfigServerToResponseServer(config.Servers),
+				"servers": ConfigServerToResponseServer(config.Servers, response),
 			})
 		} else {
 			c.JSON(200, gin.H{
-				"data":  response,
-				"error": nil,
+				"data": response,
 			})
 		}
 	})

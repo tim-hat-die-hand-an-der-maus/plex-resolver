@@ -16,6 +16,9 @@ deployment:
   limit:
     cpu: 300m
     memory: 50Mi
+  volumes:
+    secret:
+      server: config
 
 service:
   name: plex-resolver
@@ -24,7 +27,7 @@ service:
   appSelector: plex-resolver
 
 secret:
-  name: plex-resolver
+  name: plex-servers
   plexServers:
     - name: torben
       url: https://plex.carstens.tech

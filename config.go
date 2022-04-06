@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"os"
 )
@@ -26,7 +27,9 @@ func ReadConfig(filename string) (*Config, error) {
 
 	var result Config
 	for _, server := range config.Servers {
-		if server.Url == "" || server.Name == "" || server.Token == "" {
+		if server.Url == "" || server.Name == "" || server.Token == "" || server.Token == "illegal base64 data at input byte 0" {
+			fmt.Printf("ignoring server: %v\n", server)
+		} else {
 			result.Servers = append(result.Servers, server)
 		}
 	}
@@ -34,12 +37,13 @@ func ReadConfig(filename string) (*Config, error) {
 	return &result, err
 }
 
-func ConfigServerToResponseServer(servers []ConfigPlexServer) []ResponseServer {
-	result := make([]ResponseServer, len(servers))
-	for _, server := range servers {
+func ConfigServerToResponseServer(servers []ConfigPlexServer, responses []MovieResponse) []ResponseServer {
+	result := make([]ResponseServer, len(servers)-1)
+	for idx, server := range servers {
 		result = append(result, ResponseServer{
-			Name: server.Name,
-			Url:  server.Url,
+			Name:  server.Name,
+			Url:   server.Url,
+			Error: responses[idx].Error,
 		})
 	}
 
