@@ -11,12 +11,6 @@ import (
 	"time"
 )
 
-func failOnError(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
-	}
-}
-
 func requiredEnv(name string) string {
 	value := os.Getenv(name)
 	if len(value) == 0 {
@@ -26,31 +20,64 @@ func requiredEnv(name string) string {
 	return value
 }
 
-type Movie struct {
-	Title string `json:"title"`
+func plexServerResponse(server ConfigPlexServer) MovieResponse {
+	plex := New(server.Url, server.Token)
+	movies, err := plex.Movies()
+	if err != nil {
+		err = fmt.Errorf("failed to retrieve movies: %v", err)
+	}
+
+	return MovieResponse{
+		Name:   server.Name,
+		Movies: movies,
+		Error:  &err,
+	}
 }
 
-type QueueRequest struct {
-	Action  string `json:"action"`
-	Request string `json:"request"`
-	Queue   string `json:"queue"`
+func isAllError(movies []MovieResponse) bool {
+	if len(movies) == 0 {
+		return true
+	}
+
+	for _, movie := range movies {
+		if movie.Error != nil {
+			return false
+		}
+	}
+
+	return false
 }
 
 func main() {
-	token := requiredEnv("PLEX_TOKEN")
-	plexUrl := requiredEnv("PLEX_URL")
+	config, err := ReadConfig("config.toml")
+	if err != nil {
+		fmt.Printf("failed to read config:\n%v\n", err)
+		return
+	}
+
 	r := gin.Default()
 	r.GET("/movies", func(c *gin.Context) {
-		plex := New(plexUrl, token)
-		movies, err := plex.Movies()
-		if err != nil {
+		response := make([]MovieResponse, len(config.Servers))
+
+		for _, server := range config.Servers {
+			response = append(response, plexServerResponse(server))
+		}
+
+		if isAllError(response) {
+			c.Header("Content-Type", "application/problem+json")
+			c.Header("Content-Language", "en")
+
 			c.JSON(500, gin.H{
-				"movies": make([]int, 0),
-				"error":  fmt.Sprintf("%v", err),
+				"data":    make([]int, 0),
+				"type":    "https://github.com/tim-hat-die-hand-an-der-maus/plex-resolver",
+				"title":   "Failed to retrieve movies",
+				"detail":  fmt.Sprintf("Failed to retrieve movies from all %d plex servers", len(config.Servers)),
+				"servers": ConfigServerToResponseServer(config.Servers),
 			})
 		} else {
 			c.JSON(200, gin.H{
-				"movies": movies,
+				"data":  response,
+				"error": nil,
 			})
 		}
 	})
@@ -58,46 +85,10 @@ func main() {
 	log.Fatal(r.Run("0.0.0.0:8080"))
 }
 
-type Plex struct {
-	baseUrl string
-	token   string
-	client  http.Client
-}
-
-type Location struct {
-	XMLName xml.Name `xml:"Location"`
-	Id      string   `xml:"id,attr"`
-}
-
-type Directory struct {
-	XMLName  xml.Name `xml:"Directory"`
-	Title    string   `xml:"title,attr"`
-	Type     string   `xml:"type,attr"`
-	Location Location `xml:"Location"`
-}
-
-type MediaContainer struct {
-	XMLName     xml.Name    `xml:"MediaContainer"`
-	Size        string      `xml:"size,attr"`
-	ViewGroup   string      `xml:"viewGroup,attr"`
-	Directories []Directory `xml:"Directory"`
-}
-
-type Video struct {
-	XMLName xml.Name `xml:"Video"`
-	Title   string   `xml:"title,attr"`
-}
-
 func (v Video) ToMovie() Movie {
 	return Movie{
 		Title: v.Title,
 	}
-}
-
-type MediaContainerLibrary struct {
-	XMLName xml.Name `xml:"MediaContainer"`
-	Size    string   `xml:"size,attr"`
-	Videos  []Video  `xml:"Video"`
 }
 
 func New(baseUrl, token string) Plex {
@@ -116,6 +107,7 @@ func (p Plex) Get(url string, marshalInto interface{}) (*http.Response, error) {
 	url = p.baseUrl + "/" + url + "?X-Plex-Token="
 	// TODO: use url type for this
 	url = url + p.token
+
 	response, err := p.client.Get(url)
 	if err != nil {
 		//goland:noinspection GoUnusedCallResult
@@ -180,7 +172,10 @@ func videosToMovies(videos []Video) []Movie {
 
 func (p Plex) Movies() ([]Movie, error) {
 	libraries, err := p.Libraries()
-	failOnError(err, "failed to retrieve libraries")
+	if err != nil {
+		log.Printf("Failed to retrieve libraries: %v\n", err)
+		return make([]Movie, 0), err
+	}
 
 	var videos []Movie
 

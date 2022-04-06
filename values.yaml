@@ -24,10 +24,11 @@ service:
   appSelector: plex-resolver
 
 secret:
-  name: rabbitmq
-  token: __PLEX_TOKEN__
+  name: plex-resolver
+  plexServers:
+    - name: torben
+      url: https://plex.carstens.tech
+      token: __TORBEN_PLEX_TOKEN__
 
 configmap:
   name: plex-resolver
-  plex:
-    url: https://plex.carstens.tech

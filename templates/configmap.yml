@@ -3,5 +3,4 @@ kind: ConfigMap
 metadata:
   name: {{ .Values.configmap.name }}
   namespace: {{ .Values.namespace }}
-data:
-  PLEX_URL: "{{ .Values.configmap.plex.url }}"
+data: {}

@@ -1,5 +1,7 @@
 .idea
 *.iml
 
+plex-resolver
 plex-request
 
+config.toml
