@@ -6,6 +6,7 @@ import (
 
 type Movie struct {
 	Title string `json:"title"`
+	Year  string `json:"year"`
 }
 
 type ResponseServer struct {
@@ -48,11 +49,13 @@ type MediaContainer struct {
 type Video struct {
 	XMLName xml.Name `xml:"Video"`
 	Title   string   `xml:"title,attr"`
+	Year    string   `xml:"year,attr"`
 }
 
 func (v Video) ToMovie() Movie {
 	return Movie{
 		Title: v.Title,
+		Year:  v.Year,
 	}
 }
 
