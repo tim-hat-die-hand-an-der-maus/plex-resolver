@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/xml"
+	"strconv"
 )
 
 type Movie struct {
-	Title string `json:"title"`
-	Year  string `json:"year"`
+	Title string  `json:"title"`
+	Year  *uint16 `json:"year"`
 }
 
 type ResponseServer struct {
@@ -53,9 +54,19 @@ type Video struct {
 }
 
 func (v Video) ToMovie() Movie {
+	var year *uint16
+
+	_year, err := strconv.ParseInt(v.Year, 10, 16)
+	if err != nil {
+		year = nil
+	} else {
+		y := uint16(_year)
+		year = &y
+	}
+
 	return Movie{
 		Title: v.Title,
-		Year:  v.Year,
+		Year:  year,
 	}
 }
 
