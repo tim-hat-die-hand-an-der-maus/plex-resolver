@@ -6,8 +6,9 @@ import (
 )
 
 type Movie struct {
-	Title string  `json:"title"`
-	Year  *uint16 `json:"year"`
+	Title   string  `json:"title"`
+	Year    *uint16 `json:"year"`
+	AddedAt uint64  `json:"added-at"`
 }
 
 type ResponseServer struct {
@@ -51,6 +52,7 @@ type Video struct {
 	XMLName xml.Name `xml:"Video"`
 	Title   string   `xml:"title,attr"`
 	Year    string   `xml:"year,attr"`
+	AddedAt int64    `xml:"addedAt,attr"`
 }
 
 func (v Video) ToMovie() Movie {
@@ -65,8 +67,9 @@ func (v Video) ToMovie() Movie {
 	}
 
 	return Movie{
-		Title: v.Title,
-		Year:  year,
+		Title:   v.Title,
+		Year:    year,
+		AddedAt: uint64(v.AddedAt),
 	}
 }
 
