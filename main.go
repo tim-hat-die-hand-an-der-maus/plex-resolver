@@ -10,15 +10,6 @@ import (
 	"time"
 )
 
-func requiredEnv(name string) string {
-	value := os.Getenv(name)
-	if len(value) == 0 {
-		log.Fatalf("env variable %s not found", name)
-	}
-
-	return value
-}
-
 func plexServerResponse(server ConfigPlexServer) MovieResponse {
 	plex := New(server.Url, server.Token)
 	movies, err := plex.DirectoryContentByName("movie")
