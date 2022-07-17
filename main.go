@@ -10,9 +10,9 @@ import (
 	"time"
 )
 
-func plexServerResponse(server ConfigPlexServer) MovieResponse {
+func plexServerResponse(directoryName string, server ConfigPlexServer) MovieResponse {
 	plex := New(server.Url, server.Token)
-	movies, err := plex.DirectoryContentByName("movie")
+	movies, err := plex.DirectoryContentByName(directoryName)
 	if err != nil {
 		err = fmt.Errorf("failed to retrieve movies: %v", err)
 	}
@@ -38,11 +38,11 @@ func isAllError(serverResponse []MovieResponse) bool {
 	return false
 }
 
-func movies(c *gin.Context, config *Config) (int, gin.H) {
+func directory(name string, c *gin.Context, config *Config) (int, gin.H) {
 	response := make([]MovieResponse, len(config.Servers)-1)
 
 	for _, server := range config.Servers {
-		response = append(response, plexServerResponse(server))
+		response = append(response, plexServerResponse(name, server))
 	}
 
 	if isAllError(response) {
@@ -64,7 +64,7 @@ func movies(c *gin.Context, config *Config) (int, gin.H) {
 }
 
 func moviesAddedSince(c *gin.Context, config *Config) (int, gin.H) {
-	code, content := movies(c, config)
+	code, content := directory("movie", c, config)
 	if code != 200 {
 		return code, content
 	}
@@ -111,6 +111,22 @@ func moviesAddedSince(c *gin.Context, config *Config) (int, gin.H) {
 	}
 }
 
+func contains[T comparable](elements []T, value T) bool {
+	for _, element := range elements {
+		if element == value {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isValidDirectoryName(name string) bool {
+	validNames := []string{"show", "movie"}
+
+	return contains(validNames, name)
+}
+
 func main() {
 	configFilename := os.Getenv("CONFIG_FILENAME")
 	if configFilename == "" {
@@ -125,12 +141,32 @@ func main() {
 
 	r := gin.Default()
 	r.GET("/movies", func(c *gin.Context) {
-		code, content := movies(c, config)
+		code, content := directory("movie", c, config)
 		c.JSON(code, content)
 	})
 	r.GET("/movies/:since", func(c *gin.Context) {
 		code, content := moviesAddedSince(c, config)
 		c.JSON(code, content)
+	})
+	r.GET("/shows", func(c *gin.Context) {
+		code, content := directory("show", c, config)
+		c.JSON(code, content)
+	})
+	r.GET("/directory/:name", func(c *gin.Context) {
+		directoryName := c.Param("name")
+		if !isValidDirectoryName(directoryName) {
+			c.JSON(400, gin.H{
+				"data":   make([]int, 0),
+				"type":   "https://github.com/tim-hat-die-hand-an-der-maus/plex-resolver",
+				"title":  "input is not a valid directory name",
+				"detail": fmt.Sprintf("`%s` is not a valid directory name", directoryName),
+				// FIXME: Add this information
+				//"servers": ConfigServerToResponseServer(config.Servers, data),
+			})
+		} else {
+			code, content := directory(directoryName, c, config)
+			c.JSON(code, content)
+		}
 	})
 
 	log.Fatal(r.Run("0.0.0.0:8080"))
