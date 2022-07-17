@@ -71,26 +71,57 @@ func (p Plex) Library(id string) (*MediaContainerLibrary, error) {
 	return &container, nil
 }
 
-func (p Plex) Movies() ([]Movie, error) {
+func (p Plex) Directories() ([]Directory, error) {
 	libraries, err := p.Libraries()
 	if err != nil {
 		log.Printf("Failed to retrieve libraries: %v\n", err)
-		return make([]Movie, 0), err
+		return []Directory{}, err
+	}
+
+	var directories []Directory
+
+	for _, directory := range libraries.Directories {
+		directories = append(directories, directory)
+	}
+
+	return directories, nil
+}
+
+// FIXME: take a conversion function (e.g. videosToMovies) - also use a generic type for the return
+//        + access to library (e.g. library.Videos)
+func (p Plex) DirectoryContent(directory Directory) ([]Movie, error) {
+	library, err := p.Library(directory.Location.Id)
+	if err != nil {
+		return []Movie{}, fmt.Errorf("failed to retrieve library [%s] %s", directory.Location.Id, directory.Title)
+	}
+
+	if directory.Type == "movie" {
+		return videosToMovies(library.Videos), nil
+	} else {
+		return directoriesToMovies(library.Directories), nil
+	}
+}
+
+// FIXME: Use a generic return type + conversion function (see comment for DirectoryContent)
+func (p Plex) DirectoryContentByName(name string) ([]Movie, error) {
+	directories, err := p.Directories()
+	if err != nil {
+		log.Printf("Failed to retrieve directories: %v\n", err)
+		return []Movie{}, err
 	}
 
 	var videos []Movie
-
-	for _, directory := range libraries.Directories {
-		if directory.Type != "movie" {
+	for _, directory := range directories {
+		if directory.Type != name {
 			continue
 		}
 
-		library, err := p.Library(directory.Location.Id)
+		movies, err := p.DirectoryContent(directory)
 		if err != nil {
-			return videos, fmt.Errorf("failed to retrieve library [%s] %s", directory.Location.Id, directory.Title)
+			return nil, err
 		}
-
-		videos = append(videos, videosToMovies(library.Videos)...)
+		videos = append(videos, movies...)
+		break
 	}
 
 	return videos, nil

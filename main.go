@@ -21,7 +21,7 @@ func requiredEnv(name string) string {
 
 func plexServerResponse(server ConfigPlexServer) MovieResponse {
 	plex := New(server.Url, server.Token)
-	movies, err := plex.Movies()
+	movies, err := plex.DirectoryContentByName("movie")
 	if err != nil {
 		err = fmt.Errorf("failed to retrieve movies: %v", err)
 	}
@@ -59,7 +59,7 @@ func movies(c *gin.Context, config *Config) (int, gin.H) {
 		c.Header("Content-Language", "en")
 
 		return 500, gin.H{
-			"data":    make([]int, 0),
+			"data":    []int{},
 			"type":    "https://github.com/tim-hat-die-hand-an-der-maus/plex-resolver",
 			"title":   "Failed to retrieve movies",
 			"detail":  fmt.Sprintf("Failed to retrieve movies from all %d plex servers", len(config.Servers)),
@@ -155,6 +155,16 @@ func New(baseUrl, token string) Plex {
 		token:   token,
 		client:  client,
 	}
+}
+
+func directoriesToMovies(videos []Directory) []Movie {
+	var movies []Movie
+
+	for _, video := range videos {
+		movies = append(movies, video.ToMovie())
+	}
+
+	return movies
 }
 
 func videosToMovies(videos []Video) []Movie {

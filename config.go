@@ -28,7 +28,7 @@ func ReadConfig(filename string) (*Config, error) {
 	var result Config
 	for _, server := range config.Servers {
 		if server.Url == "" || server.Name == "" || server.Token == "" || server.Token == "illegal base64 data at input byte 0" {
-			fmt.Printf("ignoring server: %v\n", server)
+			fmt.Printf("ignoring server (`%v`) due to missing/faulty information\n", server)
 		} else {
 			result.Servers = append(result.Servers, server)
 		}
