@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
-      - uses: WyriHaximus/github-action-helm3@v2
+      - uses: WyriHaximus/github-action-helm3@v3
         with:
           exec: helm lint
-      - uses: WyriHaximus/github-action-helm3@v2
+      - uses: WyriHaximus/github-action-helm3@v3
         with:
           exec: helm lint --strict
 
@@ -41,7 +41,7 @@ jobs:
         run: sed -i -e "s#__TAG__#${GITHUB_SHA}#g" values.yaml
       - run: sed -i -e "s#__TORBEN_PLEX_TOKEN__#${{ secrets.PLEX_TOKEN }}#g" values.yaml
       - name: install helm chart
-        uses: WyriHaximus/github-action-helm3@v2
+        uses: WyriHaximus/github-action-helm3@v3
         with:
           exec: helm upgrade plex-resolver . --install --namespace=timhatdiehandandermaus --atomic
           kubeconfig: ${{ secrets.KUBECONFIG_RAW }}
