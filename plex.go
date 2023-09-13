@@ -21,14 +21,12 @@ func (p Plex) Get(url string, marshalInto interface{}) (*http.Response, error) {
 
 	response, err := p.client.Get(url)
 	if err != nil {
-		//goland:noinspection GoUnusedCallResult
-		fmt.Errorf("failed to retrieve url: %s", err)
+		err = fmt.Errorf("failed to retrieve url: %s", err)
 		return response, err
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		//goland:noinspection GoUnusedCallResult
 		err = fmt.Errorf("couldn't read from response body %v", err)
 		return response, err
 	}
